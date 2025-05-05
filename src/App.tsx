@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -27,23 +27,21 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/stores" element={<StoresList />} />
-              <Route path="/stores/:storeId" element={<StoreDetail />} />
-              <Route path="/products/:productId" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              
-              {/* Dashboard routes */}
-              <Route path="/dashboard" element={<DashboardHome />} />
-              <Route path="/dashboard/stores/:storeId/manage" element={<ManageStore />} />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/stores" element={<StoresList />} />
+            <Route path="/stores/:storeId" element={<StoreDetail />} />
+            <Route path="/products/:productId" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            
+            {/* Dashboard routes */}
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/stores/:storeId/manage" element={<ManageStore />} />
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </TooltipProvider>
       </CartProvider>
     </AuthProvider>

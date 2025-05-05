@@ -16,6 +16,7 @@ import MainLayout from "@/components/Layout/MainLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { addSale } from "@/services/dataService";
 import { groupBy } from "lodash";
+import { CartItem } from "@/types";
 
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal } = useCart();
@@ -24,7 +25,7 @@ const Cart = () => {
   const { toast } = useToast();
 
   // Group cart items by store
-  const cartByStore = groupBy(cart, (item) => item.product.storeId);
+  const cartByStore: Record<string, CartItem[]> = groupBy(cart, (item) => item.product.storeId);
 
   const formatPrice = (price: number) => {
     return `₹${price.toFixed(2)}`;
