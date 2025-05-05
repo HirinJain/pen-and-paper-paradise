@@ -1,16 +1,21 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { getStoreById, getProductsByStoreId } from "@/services/dataService";
+import { useParams, useNavigate } from "react-router-dom";
+import { getStoreById, getProductsByStoreId, addProduct } from "@/services/dataService";
 import { Store, Product } from "@/types";
 import MainLayout from "@/components/Layout/MainLayout";
-import { Store as StoreIcon, Package, Phone, MapPin } from "lucide-react";
+import { Store as StoreIcon, Package, Phone, MapPin, Plus } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 const StoreDetail = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -18,6 +23,20 @@ const StoreDetail = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser, isAdmin, isManager, canManageStore } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // New product dialog state
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+    storeId: storeId,
+    name: "",
+    description: "",
+    price: 0,
+    category: "",
+    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+    stock: 0,
+  });
 
   useEffect(() => {
     const fetchStoreDetails = async () => {
@@ -40,6 +59,55 @@ const StoreDetail = () => {
 
     fetchStoreDetails();
   }, [storeId]);
+
+  const handleAddProduct = async () => {
+    try {
+      if (!newProduct.name || !newProduct.price) {
+        toast({
+          title: "Validation error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const addedProduct = await addProduct({
+        storeId: storeId!,
+        name: newProduct.name!,
+        description: newProduct.description || "",
+        price: newProduct.price!,
+        category: newProduct.category || "Other",
+        image: newProduct.image || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+        stock: newProduct.stock || 0,
+      });
+
+      setProducts([...products, addedProduct]);
+      setIsAddDialogOpen(false);
+      
+      // Reset the form
+      setNewProduct({
+        storeId: storeId,
+        name: "",
+        description: "",
+        price: 0,
+        category: "",
+        image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9",
+        stock: 0,
+      });
+
+      toast({
+        title: "Product added",
+        description: "New product has been added to the store",
+      });
+    } catch (error) {
+      console.error("Error adding product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add product",
+        variant: "destructive",
+      });
+    }
+  };
 
   const formatPrice = (price: number) => {
     return `₹${price.toFixed(2)}`;
@@ -127,6 +195,11 @@ const StoreDetail = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Products</h2>
+                {isAdmin && (
+                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Product
+                  </Button>
+                )}
               </div>
 
               {products.length === 0 ? (
@@ -169,6 +242,79 @@ const StoreDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Product Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                placeholder="Product name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                placeholder="Product description"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (₹)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) })}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={newProduct.stock}
+                  onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                placeholder="Product category"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Image URL</Label>
+              <Input
+                id="image"
+                value={newProduct.image}
+                onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddProduct}>Add Product</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
